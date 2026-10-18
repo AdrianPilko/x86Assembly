@@ -16,7 +16,7 @@ if [ -f "$SOURCE_FILE" ]; then
    echo "Found file: $SOURCE_FILE starting build"
 
    # 1. Compile into an object module file using the GNU Assembler (as)
-   if as --64 $SOURCE_FILE -o $OBJ_FILE; then
+   if as -g  --64 $SOURCE_FILE -o $OBJ_FILE; then
       echo "assembled to object file $OBJ_FILE"
    else
       echo "assembly failed"
@@ -24,7 +24,7 @@ if [ -f "$SOURCE_FILE" ]; then
    fi
 
    # 2. Link into an executable binary using the GNU Linker (ld)
-   if  ld -m elf_x86_64 $OBJ_FILE -o $EXE_FILE; then
+   if  ld -g -m elf_x86_64 $OBJ_FILE -o $EXE_FILE; then
       echo "linked successful"
    else
       echo "failed link"
