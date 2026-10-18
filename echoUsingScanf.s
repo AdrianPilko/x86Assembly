@@ -1,35 +1,42 @@
-.global main
-.section .data
-    # %99s limits the input to 99 characters to prevent buffer overflow
-    format_in:  .asciz "%99s"       
-    format_out: .asciz "%s\n"
+section .data
+    ; Format strings for scanf and printf
+    ; %s reads a white-space delimited string, %[^\n] reads an entire line
+    fmt_in  db "%127[^\n]", 0    ; Limit input to 127 bytes to prevent buffer overflow
+    fmt_out db "%s", 10, 0      ; Prints the string followed by a newline (10)
 
-.section .bss
-    .lcomm buffer, 100               # Reserve 100 bytes for the input string
+section .bss
+    buffer resb 128             ; Reserve 128 bytes of memory for the string
 
-.text
-main:
-    # 1. Align the stack and save frame pointer
-    pushq %rbp
-    movq %rsp, %rbp
+section .text
+    global main
+    extern printf
+    extern scanf
 
-    # 2. Call scanf(format_in, buffer)
-    # ABI requires: %rdi = 1st arg, %rsi = 2nd arg
-    leaq format_in(%rip), %rdi       # Load address of the input format string
-    leaq buffer(%rip), %rsi          # Load address of the buffer
-    movq $0, %rax                    # printf/scanf need %rax=0 for no vector registers
+_start:
+    ; 1. Setup the stack frame (Aligns stack to 16 bytes for C function calls)
+    push rbp
+    mov rbp, rsp
+
+    ; 2. Call scanf(fmt_in, buffer)
+    mov rdi, fmt_in             ; 1st argument: format string
+    mov rsi, buffer             ; 2nd argument: address of our buffer
+    mov rax, 0                  ; 0 floating-point arguments
     call scanf
 
-    # 3. Call printf(format_out, buffer)
-    # ABI requires: %rdi = 1st arg, %rsi = 2nd arg
-    leaq format_out(%rip), %rdi      # Load address of the output format string
-    leaq buffer(%rip), %rsi          # Load address of the buffer
-    movq $0, %rax                    # No vector registers used
+    ; Check if scanf successfully read something (returns > 0)
+    cmp rax, 0
+    jle _exit
+
+    ; 3. Call printf(fmt_out, buffer)
+    mov rdi, fmt_out            ; 1st argument: format string
+    mov rsi, buffer             ; 2nd argument: address of our buffer
+    mov rax, 0                  ; 0 floating-point arguments
     call printf
 
-    # 4. Clean up stack and return 0
-    movq $0, %rax                    # Return value 0
-    movq %rbp, %rsp
-    popq %rbp
+_exit:
+    ; 4. Restore stack frame and exit
+    mov rax, 0                  ; Return status 0 (Success)
+    mov rsp, rbp
+    pop rbp
     ret
 
