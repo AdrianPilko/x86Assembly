@@ -1,8 +1,10 @@
 .intel_syntax noprefix
 
 .section .rodata
-   ls_text:
-      .asciz "list file:\n"
+   CRchar:
+      .asciz "\n"
+   ls_text_dev:
+      .asciz "device id:\n"
     // hoping that linux syscall allows relative paths :D
    ls_filename:
     //  .asciz "/home/adrianp/GitHub/x86Assembly/ls_stat.s"
@@ -18,17 +20,6 @@
    .globl _start
 
 _start:
-   
-   // syscall number
-   mov rax, 1
-   // output channel - stdout
-   mov rdi, 1
-   // load the text lea - load effective address
-   lea rsi, [ls_text]
-   // number of characters (inclduing the null terminator)
-   mov rdx, 13
-   syscall
-
    // syscall number for lstat
    mov rax, 6
    // for now, just ls the hard coded filename
@@ -53,6 +44,23 @@ syscall_failed:
    syscall
 
 syscall_ok:
+
+   // print out device id
+   // dev_t is 64bits on 64bit systems
+   mov rax, 1
+   mov rdi, 1
+   lea rsi, [rip + ls_text_dev]
+   mov rdx, 14
+   syscall
+
+   mov rax, 1
+   mov rdi, 1
+   lea rsi, [rip + statbuff]
+   mov rdx, 4
+   syscall
+
+   callq printCR
+   
    // clean exit
    // set the return code, zero is success
    mov rdi,0
@@ -60,3 +68,11 @@ syscall_ok:
    mov rax,60
    syscall
 
+
+printCR:
+   mov rax, 1
+   mov rdi, 1
+   lea rsi, [rip + CRchar]
+   mov rdx, 2
+   syscall
+   ret
