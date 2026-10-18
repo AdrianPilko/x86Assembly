@@ -1,28 +1,39 @@
-.global main
-.text
+section .bss
+    buffer resb 1       ; Reserve 1 byte for the character input
 
-main:
-    # 1. Read input from stdin (sys_read)
-    movq $0, %rax       # sys_read system call number
-    movq $0, %rdi       # file descriptor 0 (stdin)
-    leaq buffer, %rsi   # pointer to the input buffer
-    movq $100, %rdx     # maximum number of bytes to read
-    syscall             # invoke Linux kernel
+section .text
+    global _start
 
-    # The actual number of bytes read is now stored in %rax
-    movq %rax, %rbx     # save the byte count into %rbx for the next step
+_start:
+.read_char:
+    ; 1. Read a character from stdin (System Call: sys_read)
+    mov rax, 0          ; syscall number for sys_read (0)
+    mov rdi, 0          ; file descriptor: stdin (0)
+    mov rsi, buffer     ; pointer to the buffer storing the character
+    mov rdx, 1          ; number of bytes to read (1)
+    syscall
 
-    # 2. Echo the input back to stdout (sys_write)
-    movq $1, %rax       # sys_write system call number
-    movq $1, %rdi       # file descriptor 1 (stdout)
-    leaq buffer, %rsi   # pointer to the input buffer
-    movq %rbx, %rdx     # length of bytes to write (what sys_read returned)
-    syscall             # invoke Linux kernel
+    ; If rax <= 0 (EOF or error), exit the program
+    cmp rax, 0
+    jle .exit
 
-    # 3. Exit safely
-    movq $0, %rax       # return code 0
-    ret
+    ; 2. Write the character to stdout (System Call: sys_write)
+    mov rax, 1          ; syscall number for sys_write (1)
+    mov rdi, 1          ; file descriptor: stdout (1)
+    mov rsi, buffer     ; pointer to the buffer containing the character
+    mov rdx, 1          ; number of bytes to write (1)
+    syscall
 
-.section .bss
-.lcomm buffer, 100       # reserve 100 bytes for the input string
+    ; Check if the user pressed 'Enter' (Line Feed: 0x0A / 10) to stop echoing
+    mov al, [buffer]
+    cmp al, 0x0A
+    je .exit
+
+    jmp .read_char      ; Loop back to read the next character
+
+.exit:
+    ; 3. Terminate the program cleanly (System Call: sys_exit)
+    mov rax, 60         ; syscall number for sys_exit (60)
+    mov rdi, 0          ; exit code 0 (Success)
+    syscall
 

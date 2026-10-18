@@ -1,6 +1,11 @@
-intel_syntax noprefix
-.global _start
+.global _start
+.intel_syntax noprefix
+
 _start:
-mov rdi, 60
-mov rax,60
-syscall
+
+   // clean exit
+   // set the return code, zero is success
+   mov rdi,0   
+   // syscall
+   mov rax,60
+   syscall
