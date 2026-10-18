@@ -53,11 +53,9 @@ syscall_ok:
    mov rdx, 14
    syscall
 
-   mov rax, 1
-   mov rdi, 1
-   lea rsi, [rip + statbuff]
-   mov rdx, 4
-   syscall
+   mov rax, [rip+statbuff]
+
+   callq _printByte
 
    callq printCR
    
